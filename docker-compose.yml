@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes:
+      - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=0
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+      - DATABASE_URL=sqlite:///db.sqlite3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  static_volume:
+  media_volume:
